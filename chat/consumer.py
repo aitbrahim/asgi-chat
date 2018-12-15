@@ -131,9 +131,9 @@ class BaseWebSocketEndpoint:
         """
         Called when a WebSocket frame is received.
         """
-        await self.receive(text_data=message["text"])
+        await self.receive(message["data"])
 
-    async def receive(self, text_data=None, bytes_data=None):
+    async def receive(self, data=None):
         """
         Called with a decoded WebSocket frame.
         """

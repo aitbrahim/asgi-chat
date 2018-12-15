@@ -1,0 +1,25 @@
+version: "3"
+services:
+  server:
+    build: .
+    ports:
+      - "8000:8000"
+    command: >
+      bash -c "python ws_app.py"
+
+  client_1:
+    build: .
+    ports:
+      - "8001:5432"
+    command: >
+      bash -c "python http_app.py"
+
+  client_2:
+    build: .
+    ports:
+      - "8002:5432"
+    command: >
+      bash -c "python http_app.py"
+
+  redis:
+    image: redis:latest

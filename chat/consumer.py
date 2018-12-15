@@ -71,23 +71,9 @@ class BaseWebSocketEndpoint:
         """
         Works out what to do with a messgae
         """
-
-        if message["type"] == "websocket.receive":
-            data = await self.decode(websocket, message)
-            # await self.on_receive(websocket, data)
-        elif message["type"] == "websocket.disconnect":
-            close_code = int(message.get("code", status.WS_1000_NORMAL_CLOSURE))
-
-        msg = {
-            'type': message["type"],
-            'data': data
-        }
-
-        print("msg = {}".format(msg))
-
-        handler = getattr(self, get_handler_name(msg), None)
+        handler = getattr(self, get_handler_name(message), None)
         if handler:
-            await handler(msg)
+            await handler(message)
         else:
             raise ValueError("No handler for message %s" % message["type"])
 
@@ -95,45 +81,17 @@ class BaseWebSocketEndpoint:
         """Override to handle an incoming websocket connection"""
         await websocket.accept()
 
-
-    async def decode(self, websocket: WebSocket, message: Message) -> typing.Any:
-
-        if self.encoding == "text":
-            if "text" not in message:
-                await websocket.close(code=status.WS_1003_UNSUPPORTED_DATA)
-                raise RuntimeError("Expected text websocket messages, but got bytes")
-            return message["text"]
-
-        elif self.encoding == "bytes":
-            if "bytes" not in message:
-                await websocket.close(code=status.WS_1003_UNSUPPORTED_DATA)
-                raise RuntimeError("Expected bytes websocket messages, but got text")
-            return message["bytes"]
-
-        elif self.encoding == "json":
-            if "bytes" not in message:
-                await websocket.close(code=status.WS_1003_UNSUPPORTED_DATA)
-                raise RuntimeError(
-                    "Expected JSON to be transferred as bytes websocket messages, but got text"
-                )
-            return json.loads(message["bytes"].decode("utf-8"))
-
-        assert (
-            self.encoding is None
-        ), f"Unsupported 'encoding' attribute {self.encoding}"
-        return message["text"] if "text" in message else message["bytes"]
-
-
-
-
-
     async def websocket_receive(self, message):
         """
-        Called when a WebSocket frame is received.
+        Called when a WebSocket frame is received. Decodes it and passes it
+        to receive().
         """
-        await self.receive(message["data"])
+        if "text" in message:
+            await self.receive(text_data=message["text"])
+        else:
+            await self.receive(bytes_data=message["bytes"])
 
-    async def receive(self, data=None):
+    async def receive(self, text_data=None, bytes_data=None):
         """
         Called with a decoded WebSocket frame.
         """

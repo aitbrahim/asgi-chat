@@ -1,0 +1,1 @@
+DEFAULT_CHANNEL_LAYER = 'default'

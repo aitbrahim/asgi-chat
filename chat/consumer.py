@@ -3,13 +3,12 @@ from . import DEFAULT_CHANNEL_LAYER
 from starlette.types import Message, Receive, Scope, Send
 from .exceptions import StopConsumer
 import functools
-from starlette import status
 from .utils import await_many_dispatch
 from .layers import get_channel_layer
 
 
 
-class BaseWebSocketEndpoint:
+class WebSocketEndpoint:
     encoding = None  # May be "text", "bytes", or "json".
 
     def __init__(self, scope: Scope) -> None:
@@ -114,4 +113,3 @@ def get_handler_name(message):
         raise ValueError("Malformed type in message (leading underscore)")
 
     return message["type"].replace(".", "_")
-

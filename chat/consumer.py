@@ -90,11 +90,6 @@ class WebSocketEndpoint:
         data = await self.decode(self.websocket, message)
         await self.receive(data)
 
-        # if "text" in message:
-        #     await self.receive(text_data=message["text"])
-        # else:
-        #     await self.receive(bytes_data=message["bytes"])
-
     async def receive(self, data):
         """
         Called with a decoded WebSocket frame.

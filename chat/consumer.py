@@ -1,13 +1,15 @@
-from starlette.websockets import WebSocket
-from . import DEFAULT_CHANNEL_LAYER
-from starlette.types import Message, Receive, Scope, Send
-from .exceptions import StopConsumer
-import functools
-from .utils import await_many_dispatch
-from .layers import get_channel_layer
 import json
 import typing
+import functools
+
 from starlette import status
+from starlette.websockets import WebSocket
+from starlette.types import Message, Receive, Scope, Send
+
+from .exceptions import StopConsumer
+from .utils import await_many_dispatch
+from .layers import get_channel_layer
+from . import DEFAULT_CHANNEL_LAYER
 
 
 class WebSocketEndpoint:

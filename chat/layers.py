@@ -1,10 +1,10 @@
 from __future__ import unicode_literals
+import importlib
 
 from . import DEFAULT_CHANNEL_LAYER
-
 from .exceptions import InvalidChannelLayerError
 from chat.conf import settings
-import importlib
+
 
 class ChannelLayerManager(object):
     """

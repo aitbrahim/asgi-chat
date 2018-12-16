@@ -5,7 +5,9 @@ from .exceptions import StopConsumer
 import functools
 from .utils import await_many_dispatch
 from .layers import get_channel_layer
-
+import json
+import typing
+from starlette import status
 
 
 class WebSocketEndpoint:
@@ -20,10 +22,10 @@ class WebSocketEndpoint:
     # ASGI Callable
     async def __call__(self, receive: Receive, send: Send) -> None:
 
-        websocket = WebSocket(self.scope, receive=receive, send=send)
+        self.websocket = WebSocket(self.scope, receive=receive, send=send)
 
         # overridable/Callable by subclasses
-        await self.on_connect(websocket)
+        await self.on_connect(self.websocket)
 
         # save send method
         self.send_base = send
@@ -85,12 +87,15 @@ class WebSocketEndpoint:
         Called when a WebSocket frame is received. Decodes it and passes it
         to receive().
         """
-        if "text" in message:
-            await self.receive(text_data=message["text"])
-        else:
-            await self.receive(bytes_data=message["bytes"])
+        data = await self.decode(self.websocket, message)
+        await self.receive(data)
 
-    async def receive(self, text_data=None, bytes_data=None):
+        # if "text" in message:
+        #     await self.receive(text_data=message["text"])
+        # else:
+        #     await self.receive(bytes_data=message["bytes"])
+
+    async def receive(self, data):
         """
         Called with a decoded WebSocket frame.
         """
@@ -101,6 +106,38 @@ class WebSocketEndpoint:
         Overideable/callable by subclasses
         """
         await self.send_base(message)
+
+    async def decode(self, websocket: WebSocket, message: Message) -> typing.Any:
+
+        if self.encoding == "text":
+            if "text" not in message:
+                await websocket.close(code=status.WS_1003_UNSUPPORTED_DATA)
+                raise RuntimeError("Expected text websocket messages, but got bytes")
+            return message["text"]
+
+        elif self.encoding == "bytes":
+            if "bytes" not in message:
+                await websocket.close(code=status.WS_1003_UNSUPPORTED_DATA)
+                raise RuntimeError("Expected bytes websocket messages, but got text")
+            return message["bytes"]
+
+        elif self.encoding == "json":
+            try:
+                message_json = None
+                if "text" in message:
+                    message_json = json.loads(message["text"])
+                elif message["bytes"]:
+                    message_json = json.loads(message["bytes"].decode("utf-8"))
+            except json.decoder.JSONDecodeError:
+                await websocket.close(code=status.WS_1003_UNSUPPORTED_DATA)
+                raise RuntimeError("Malformed JSON data received.")
+            else:
+                return message_json
+
+        assert (
+            self.encoding is None
+        ), f"Unsupported 'encoding' attribute {self.encoding}"
+        return message["text"] if "text" in message else message["bytes"]
 
 
 def get_handler_name(message):

@@ -1,23 +1,25 @@
 import uvicorn
+import json
 from starlette.websockets import WebSocket
 from chat.consumer import WebSocketEndpoint
 
 
 class App(WebSocketEndpoint):
+    encoding = "json"
 
     async def on_connect(self, websocket: WebSocket) -> None:
         """Override to handle an incoming websocket connection"""
         await websocket.accept()
 
-    async def receive(self, text_data=None, bytes_data=None):
-        """Override to handle an incoming websocket message"""
-
+    async def receive(self, data):
         # Send message to room group
+        if self.encoding == 'json':
+            data = json.dumps(data)
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 'type': 'chat_message',
-                'message': text_data
+                'message': data
             }
         )
 

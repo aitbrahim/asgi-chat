@@ -102,6 +102,15 @@ class WebSocketEndpoint:
         """
         await self.send_base(message)
 
+    async def websocket_disconnect(self, message):
+        """
+        Called when a WebSocket disconnect.
+        """
+        await self.on_disconnect(self.websocket, message["code"])
+
+    async def on_disconnect(self, websocket: WebSocket, close_code: int) -> None:
+        """Override to handle a disconnecting websocket"""
+
     async def decode(self, websocket: WebSocket, message: Message) -> typing.Any:
 
         if self.encoding == "text":

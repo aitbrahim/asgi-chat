@@ -30,12 +30,12 @@ class App(WebSocketEndpoint):
 
         await self.send({"type": "websocket.send", "text": message})
 
-    # async def disconnect(self, close_code):
-    #     # Leave room group
-    #     await self.channel_layer.group_discard(
-    #         self.room_group_name,
-    #         self.channel_name
-    #     )
+    async def disconnect(self, close_code):
+        # Leave room group
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name
+        )
 
 
 app = App

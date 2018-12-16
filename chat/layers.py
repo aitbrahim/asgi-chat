@@ -2,18 +2,9 @@ from __future__ import unicode_literals
 
 from . import DEFAULT_CHANNEL_LAYER
 
-# from .exceptions import InvalidChannelLayerError
-
-
-CHANNEL_LAYERS_CONFIG = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('redis', 6379)],
-        },
-    },
-}
-
+from .exceptions import InvalidChannelLayerError
+import settings
+import importlib
 
 class ChannelLayerManager(object):
     """
@@ -25,7 +16,7 @@ class ChannelLayerManager(object):
     @property
     def configs(self):
         # Lazy load settings so we can be imported
-        return CHANNEL_LAYERS_CONFIG
+        return settings.CHANNEL_LAYERS_CONFIG
 
     def make_backend(self, name):
         """
@@ -35,24 +26,25 @@ class ChannelLayerManager(object):
         return self._make_backend(name, config)
 
     def _make_backend(self, name, config):
-        # # Load the backend class
-        # try:
-        #     import importlib
-        #     backend_class = __import__(self.configs[name]["BACKEND"])
-        # except KeyError:
-        #     raise InvalidChannelLayerError("No BACKEND specified for %s" % name)
-        # except ImportError:
-        #     raise InvalidChannelLayerError(
-        #         "Cannot import BACKEND %r specified for %s"
-        #         % (self.configs[name]["BACKEND"], name)
-        #     )
+        # Load the backend class
+        try:
+            _mod = self.configs[name]["BACKEND"].split(".")
+            backend_module = importlib.import_module(".".join(_mod[:-1]))
+            backend_class = getattr(backend_module, _mod[-1])
+        except KeyError:
+            raise InvalidChannelLayerError("No BACKEND specified for %s" % name)
+        except ImportError:
+            raise InvalidChannelLayerError(
+                "Cannot import BACKEND %r specified for %s"
+                % (self.configs[name]["BACKEND"], name)
+            )
 
-        """
-        Static import for now
-        """
-        from channels_redis.core import RedisChannelLayer
+        # """
+        # Static import for now
+        # """
+        # from channels_redis.core import RedisChannelLayer
         # Initialise and pass config
-        return RedisChannelLayer(**config)
+        return backend_class(**config)
 
     def __getitem__(self, key):
         if key not in self.backends:

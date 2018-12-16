@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from . import DEFAULT_CHANNEL_LAYER
 
 from .exceptions import InvalidChannelLayerError
-import settings
+from chat.conf import settings
 import importlib
 
 class ChannelLayerManager(object):
